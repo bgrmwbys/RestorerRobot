@@ -13,5 +13,6 @@ go build
 echo.
 echo.
 timeout 4
+pause
 exit
 :: Hail Hydra
