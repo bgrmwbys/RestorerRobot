@@ -80,7 +80,7 @@ func forceBackupHandler(container *em.WotoContainer) error {
 		sectionName := filepath.Base(name) // dummy sectionName
 		originFileName = wotoConfig.GetBaseDirForBackup(sectionName) +
 			backupUtils.GenerateFileNameFromValue(sectionName)
-		finalFileName = originFileName + wotoConfig.CompressedFileExtension
+		finalFileName = wotoConfig.GetBaseDirForBackup(sectionName) + filepath.Base(name)
 		targetChats = append(targetChats, userId)
 
 		// fetch file size
@@ -139,7 +139,7 @@ func forceBackupHandler(container *em.WotoContainer) error {
 		originFileName = wotoConfig.GetBaseDirForBackup(sectionName) +
 			backupUtils.GenerateFileNameFromValue(sectionName)
 		sourceFileName = originFileName + "." + bType
-		finalFileName = originFileName + wotoConfig.CompressedFileExtension
+		finalFileName = wotoConfig.GetBaseDirForBackup(sectionName) + filepath.Base(name)
 		if section.NoGlobal {
 			targetChats = section.LogChannels
 		} else {
@@ -197,7 +197,7 @@ func forceBackupHandler(container *em.WotoContainer) error {
 	originFileName = wotoConfig.GetBaseDirForBackup(sectionName) +
 		backupUtils.GenerateFileNameFromValue(sectionName)
 	sourceFileName = originFileName + "." + bType
-	finalFileName = originFileName + wotoConfig.CompressedFileExtension
+	finalFileName = wotoConfig.GetBaseDirForBackup(sectionName) + filepath.Base(name)
 	targetChats = append(targetChats, userId)
 	err = backupUtils.BackupDatabase(theUrl, sourceFileName, toBackupType(bType))
 	if err != nil {
