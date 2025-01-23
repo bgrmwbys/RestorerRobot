@@ -1,7 +1,6 @@
 package backupUtils
 
 import (
-	"archive/zip"
 	"errors"
 	"fmt"
 	"io"
@@ -40,61 +39,49 @@ func BackupDatabase(url, filename string, bType wotoConfig.DatabaseBackupType) e
 	return nil
 }
 
-// ZipSource converts a source file/directory to the destination zip file.
+// ZipSource transfers a source file/directory to the destination.
 func ZipSource(source, target string) error {
-	// 1. Create a ZIP file and zip.Writer
-	f, err := os.Create(target)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+    // Get file extension
+    ext := filepath.Ext(source)
+    
+    // Ensure target has the same extension
+    if filepath.Ext(target) != ext {
+        target = target + ext
+    }
 
-	writer := zip.NewWriter(f)
-	defer writer.Close()
+    // Create destination directory if needed
+    if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+        return err
+    }
 
-	// 2. Go through all the files of the source
-	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+    return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        }
 
-		// 3. Create a local file header
-		header, err := zip.FileInfoHeader(info)
-		if err != nil {
-			return err
-		}
+        // Open source file
+        sourceFile, err := os.Open(path)
+        if err != nil {
+            return err
+        }
+        defer sourceFile.Close()
 
-		// set compression
-		header.Method = zip.Deflate
+        // Create target file
+        targetFile, err := os.Create(target)
+        if err != nil {
+            return err
+        }
+        defer targetFile.Close()
 
-		// 4. Set relative path of a file as the header name
-		header.Name, err = filepath.Rel(filepath.Dir(source), path)
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			header.Name += "/"
-		}
+        // Direct copy without compression
+        _, err = io.Copy(targetFile, sourceFile)
+        if err != nil {
+            return err
+        }
 
-		// 5. Create writer for the file header and save content of the file
-		headerWriter, err := writer.CreateHeader(header)
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		_, err = io.Copy(headerWriter, f)
-		return err
-	})
+        // Copy permissions
+        return os.Chmod(target, info.Mode())
+    })
 }
 
 // GenerateCaption generates caption for the backup using the specified options.
